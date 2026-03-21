@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Báo Giá Pro - Cloud Final v2</title>
+    <title>Báo Giá Pro - Local Offline Mượt Mà</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,40 +18,6 @@
     <!-- SheetJS (Excel) -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
-    <!-- FIREBASE SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // ======================================================================================
-        // THÔNG TIN KẾT NỐI CỦA ANH (ĐÃ ĐIỀN ĐÚNG)
-        // ======================================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJ0v8t9h1PFCnHp3EtM70gy0jCV4Pgpfk",
-            authDomain: "filegiasanpham.firebaseapp.com",
-            projectId: "filegiasanpham",
-            storageBucket: "filegiasanpham.firebasestorage.app",
-            messagingSenderId: "444123574885",
-            appId: "1:444123574885:web:dffd646b0f1b65b9e9cc8c"
-        };
-        // ======================================================================================
-
-        window.isConfigured = !firebaseConfig.apiKey.includes("EXAMPLE");
-
-        if (window.isConfigured) {
-            try {
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                window.db = db;
-                window.firestore = { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy };
-                console.log("Đã khởi tạo Firebase App!");
-            } catch (e) {
-                console.error("Lỗi khởi tạo Firebase:", e);
-                window.isConfigured = false;
-            }
-        }
-    </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400&display=swap');
         body { font-family: 'Roboto', sans-serif; background-color: #f3f4f6; }
@@ -60,18 +26,27 @@
         .suggestions-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; max-height: 300px; overflow-y: auto; }
         .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
         .suggestion-item:hover { background-color: #f3f4f6; }
-        .suggestion-price { color: #ea580c; font-weight: bold; float: right; }
+        .suggestion-price { color: #0284c7; font-weight: bold; float: right; } /* Đổi màu cam thành sky */
+        
+        /* Ẩn thanh cuộn dọc nhưng vẫn cuộn được cho bảng tính */
+        .hide-scrollbar::-webkit-scrollbar { height: 6px; width: 6px;}
+        .hide-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         @media print {
             @page { size: A4 landscape; margin: 0; }
             body { background-color: white; margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .no-print, .ui-control, .fixed-toolbar, .modal-overlay, .toast-noti, .suggestions-list, .delete-col { display: none !important; }
-            .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 10mm !important; box-shadow: none !important; border: none !important; zoom: 100%; }
+            .print-container { width: 297mm !important; max-width: 297mm !important; margin: 0 !important; padding: 10mm !important; box-shadow: none !important; border: none !important; zoom: 100%; overflow: visible !important; }
+            .hide-scrollbar { overflow-x: visible !important; }
+            .print-table { min-width: 100% !important; }
             table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
-            .bg-orange-600 { background-color: #ea580c !important; color: white !important; }
-            .bg-orange-100 { background-color: #ffedd5 !important; }
+            .bg-sky-600 { background-color: #0284c7 !important; color: white !important; }
+            .bg-sky-100 { background-color: #e0f2fe !important; }
         }
     </style>
 </head>
@@ -82,57 +57,39 @@
 
         const Icons = {
             Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-            Cloud: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
+            Database: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
             Trash2: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
-            Plus: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Plus: ({size=16, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
             Printer: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
-            Upload: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+            Upload: ({size=16, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             RefreshCcw: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>,
             Edit: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-            Eye: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-            Database: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
-            Settings: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
-            AlertTriangle: ({size=40}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Eye: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8-11-8-11-8-11-8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Settings: ({size=16}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
         };
 
-        // --- FIREBASE HELPER ---
-        const fbHelper = {
-            getProducts: async () => {
-                if(!window.isConfigured || !window.db) return [];
+        // --- LOCAL DATABASE HELPER ---
+        const DB_KEY = "AQARA_LOCAL_PRODUCTS";
+        const localDbHelper = {
+            getProducts: () => {
                 try {
-                    const q = window.firestore.query(window.firestore.collection(window.db, "products"), window.firestore.orderBy("TenSP"));
-                    const snapshot = await window.firestore.getDocs(q);
-                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const data = localStorage.getItem(DB_KEY);
+                    return data ? JSON.parse(data) : [];
                 } catch (e) {
-                    console.error("Lỗi lấy dữ liệu:", e);
-                    // Check for "database not found" error
-                    if (e.code === 'not-found' || e.message.includes('not-found') || e.message.includes('database (default) does not exist')) {
-                        alert("LỖI: CHƯA TẠO DATABASE!\n\nAnh đã tạo Project nhưng chưa bấm nút 'Create Database' cho Firestore.\n\nVui lòng vào Firebase Console -> Build -> Firestore Database -> Bấm 'Create database' -> Chọn 'Start in test mode'.");
-                    }
+                    console.error("Lỗi đọc dữ liệu máy:", e);
                     return [];
                 }
             },
-            batchAddProducts: async (products) => {
-                if(!window.isConfigured || !window.db) return;
+            saveProducts: (products) => {
                 try {
-                    const promises = products.map(p => window.firestore.addDoc(window.firestore.collection(window.db, "products"), p));
-                    await Promise.all(promises);
+                    // Lọc bỏ những sản phẩm trống rỗng không có tên
+                    const validProducts = products.filter(p => p && String(p.TenSP || "").trim() !== "");
+                    localStorage.setItem(DB_KEY, JSON.stringify(validProducts));
+                    return true;
                 } catch (e) {
-                    console.error("Lỗi upload:", e);
-                     if (e.code === 'not-found' || e.message.includes('not-found') || e.message.includes('database (default) does not exist')) {
-                        alert("LỖI: CHƯA TẠO DATABASE!\n\nAnh đã tạo Project nhưng chưa bấm nút 'Create Database' cho Firestore.\n\nVui lòng vào Firebase Console -> Build -> Firestore Database -> Bấm 'Create database' -> Chọn 'Start in test mode'.");
-                    } else {
-                        alert("Lỗi upload: " + e.message);
-                    }
-                }
-            },
-            deleteProduct: async (id) => {
-                if(!window.isConfigured || !window.db) return;
-                try {
-                    await window.firestore.deleteDoc(window.firestore.doc(window.db, "products", id));
-                } catch (e) {
-                     console.error("Lỗi xóa:", e);
-                     alert("Lỗi xóa: " + e.message);
+                    console.error("Lỗi lưu dữ liệu máy:", e);
+                    alert("Không thể lưu dữ liệu. Có thể bộ nhớ trình duyệt đã đầy!");
+                    return false;
                 }
             }
         };
@@ -144,125 +101,273 @@
             return <textarea ref={ref} value={value} onChange={onChange} className={className} style={{...style, height: 'auto', minHeight: '1.5em'}} placeholder={placeholder} rows={1} />;
         };
 
-        const ConfigWarningModal = () => {
-            if (window.isConfigured) return null;
-            return (
-                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[300] p-4">
-                    <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 text-center">
-                        <Icons.AlertTriangle size={60} className="mx-auto mb-4" />
-                        <h2 className="text-xl font-bold text-gray-800 mb-2">Chưa kết nối Cơ Sở Dữ Liệu!</h2>
-                        <p className="text-gray-600 mb-4 text-sm text-left">
-                            Bạn đang dùng phiên bản "Cloud Online" nhưng chưa điền mã <b>firebaseConfig</b> của mình vào code. 
-                            <br/><br/>
-                            <b>Cách khắc phục:</b>
-                            <ul className="list-disc pl-5 mt-1 space-y-1">
-                                <li>Mở file <b>ToolBaoGia_Cloud_Final.html</b> bằng Notepad.</li>
-                                <li>Tìm đoạn <code>const firebaseConfig = ...</code> ở gần đầu file.</li>
-                                <li>Thay thế nó bằng config bạn lấy từ <b>Firebase Console</b> (Project Settings).</li>
-                            </ul>
-                        </p>
-                        <p className="text-orange-600 font-bold text-sm">Các tính năng Online sẽ tạm khóa. Bạn vẫn có thể nhập liệu thủ công.</p>
-                        <button onClick={() => {document.querySelector('.fixed.inset-0').style.display='none'}} className="mt-6 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded font-bold">Đóng & Dùng Offline</button>
-                    </div>
-                </div>
-            );
-        };
-
+        // QUẢN LÝ SẢN PHẨM LOCAL
         const ProductManager = ({ isOpen, onClose, dbProducts, onReload }) => {
+            const [editableProducts, setEditableProducts] = useState([]);
+            const [hasChanges, setHasChanges] = useState(false);
             const [uploading, setUploading] = useState(false);
-            
+
+            // Copy dữ liệu gốc ra mảng để sửa
+            useEffect(() => {
+                if (isOpen) {
+                    setEditableProducts([...dbProducts]);
+                    setHasChanges(false);
+                }
+            }, [isOpen, dbProducts]);
+
             const handleExcelUpload = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 setUploading(true);
                 const reader = new FileReader();
-                reader.onload = async (evt) => {
+                reader.onload = (evt) => {
                     try {
                         const bstr = evt.target.result;
                         const workbook = XLSX.read(bstr, { type: 'binary' });
                         const wsname = workbook.SheetNames[0];
-                        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[wsname], { defval: "" });
+                        const jsonDataRaw = XLSX.utils.sheet_to_json(workbook.Sheets[wsname], { header: 1, defval: "" });
                         
+                        let headerRowIndex = -1;
+                        let headers = [];
+
+                        for (let i = 0; i < Math.min(20, jsonDataRaw.length); i++) {
+                            const row = jsonDataRaw[i];
+                            if (!row || !Array.isArray(row)) continue;
+                            const rowString = row.join("").toLowerCase();
+                            if (rowString.includes('tên') || rowString.includes('ten') || rowString.includes('giá') || rowString.includes('gia') || rowString.includes('mô tả')) {
+                                headerRowIndex = i;
+                                headers = row.map(h => String(h || "").trim());
+                                break;
+                            }
+                        }
+
+                        if (headerRowIndex === -1) {
+                            alert("LỖI ĐỌC FILE: Không tìm thấy dòng Tiêu đề. Vui lòng kiểm tra lại file!");
+                            setUploading(false); return;
+                        }
+
+                        const jsonData = [];
+                        for (let i = headerRowIndex + 1; i < jsonDataRaw.length; i++) {
+                            const rowData = jsonDataRaw[i];
+                            if (!rowData || rowData.every(cell => !cell || cell === "")) continue; 
+                            let obj = {};
+                            headers.forEach((header, index) => { if (header) obj[header] = rowData[index]; });
+                            jsonData.push(obj);
+                        }
+
                         const getColumnName = (obj, possibilities) => {
                             const keys = Object.keys(obj);
-                            for (let p of possibilities) if (keys.includes(p)) return p;
-                            for (let key of keys) { const k = key.toLowerCase(); for (let p of possibilities) if (k.includes(p.toLowerCase())) return key; }
+                            for (let p of possibilities) {
+                                const exactMatch = keys.find(k => k.toLowerCase() === p.toLowerCase());
+                                if (exactMatch) return exactMatch;
+                            }
+                            for (let key of keys) { 
+                                const k = key.toLowerCase(); 
+                                for (let p of possibilities) if (k.includes(p.toLowerCase())) return key; 
+                            }
                             return null;
                         };
 
-                        const normalizedData = jsonData.map(item => {
-                            const nameKey = getColumnName(item, ['TenSP', 'Tên sản phẩm', 'Ten', 'Tên', 'Name', 'Model']);
-                            const descKey = getColumnName(item, ['MoTa', 'Mô tả', 'Description', 'Thông số', 'Thông tin', 'Diễn giải']);
-                            const brandKey = getColumnName(item, ['Hang', 'Hãng', 'Brand']);
-                            const warKey = getColumnName(item, ['BaoHanh', 'Bảo hành', 'Warranty']);
-                            const unitKey = getColumnName(item, ['DVT', 'ĐVT', 'Unit']);
-                            let priceKey = Object.keys(item).find(k => k.toLowerCase().includes('gia') || k.toLowerCase().includes('price'));
-                            if (!priceKey) priceKey = getColumnName(item, ['Gia', 'Giá', 'Price', 'Amount']);
+                        const normalizedData = jsonData.map((item) => {
+                            const nameKey = getColumnName(item, ['Tên SP', 'Ten SP', 'Tên sản phẩm', 'TenSP', 'Tên', 'Ten', 'Name', 'Model']);
+                            const descKey = getColumnName(item, ['Mô tả', 'MoTa', 'Description', 'Thông số', 'Thông tin', 'Diễn giải']);
+                            const brandKey = getColumnName(item, ['Hãng', 'Hang', 'Thương hiệu', 'Brand']);
+                            const warKey = getColumnName(item, ['Bảo hành', 'BaoHanh', 'BH', 'Warranty']);
+                            const unitKey = getColumnName(item, ['ĐVT', 'DVT', 'Đơn vị', 'Unit']);
+                            let priceKey = Object.keys(item).find(k => k.toLowerCase().includes('giá') || k.toLowerCase().includes('gia') || k.toLowerCase().includes('price') || k.toLowerCase().includes('đơn giá'));
 
-                            if (!item[nameKey]) return null;
+                            if (!nameKey || !item[nameKey]) return null;
+
+                            let rawPrice = item[priceKey];
+                            let parsedPrice = 0;
+                            if (typeof rawPrice === 'number') { parsedPrice = rawPrice; } 
+                            else if (rawPrice) { parsedPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10) || 0; }
 
                             return {
-                                TenSP: item[nameKey] || '',
-                                MoTa: item[descKey] || '',
-                                Hang: item[brandKey] || '',
-                                BaoHanh: item[warKey] || 12,
-                                DVT: item[unitKey] || 'Cái',
-                                Gia: item[priceKey] || 0
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                                TenSP: String(item[nameKey] || 'SP Chưa Tên').trim(),
+                                MoTa: String(item[descKey] || '').trim(),
+                                Hang: String(item[brandKey] || '').trim(),
+                                BaoHanh: String(item[warKey] || '12').trim(),
+                                DVT: String(item[unitKey] || 'Cái').trim(),
+                                Gia: parsedPrice
                             };
-                        }).filter(i => i);
+                        }).filter(i => i !== null);
 
-                        if(window.isConfigured && confirm(`Tìm thấy ${normalizedData.length} sản phẩm. Đẩy lên Cloud?`)){
-                            await fbHelper.batchAddProducts(normalizedData);
-                            alert("Đã tải xong!");
-                            onReload();
-                        } else if (!window.isConfigured) {
-                            alert("Chưa cấu hình Firebase! Không thể lưu lên Cloud.");
+                        if(normalizedData.length === 0) {
+                            alert("Đã đọc được file Excel nhưng không chắt lọc được sản phẩm nào. Cột 'Tên SP' có thể đang bị trống dữ liệu!");
+                        } else {
+                            // Gộp mảng mới vào mảng hiện tại
+                            setEditableProducts([...normalizedData, ...editableProducts]);
+                            setHasChanges(true);
+                            alert(`Đã nạp ${normalizedData.length} sản phẩm từ Excel! Anh NHỚ BẤM LƯU để lưu vào máy nhé.`);
                         }
-                    } catch (err) { alert("Lỗi: " + err.message); } finally { setUploading(false); }
+                    } catch (err) { 
+                        console.error("Lỗi code:", err); alert("Lỗi khi đọc file Excel!");
+                    } finally { 
+                        setUploading(false); e.target.value = null; 
+                    }
                 };
                 reader.readAsBinaryString(file);
             };
 
-            const handleDelete = async (id) => {
-                if(confirm("Xóa sản phẩm này?")) {
-                    await fbHelper.deleteProduct(id);
-                    onReload();
+            const handleFieldChange = (index, field, value) => {
+                const updated = [...editableProducts];
+                updated[index][field] = value;
+                setEditableProducts(updated);
+                setHasChanges(true);
+            };
+
+            const handleAddBlankProduct = () => {
+                const newProd = {
+                    id: Date.now().toString(),
+                    TenSP: "Sản phẩm mới",
+                    MoTa: "",
+                    Hang: "",
+                    BaoHanh: "12",
+                    DVT: "Cái",
+                    Gia: 0
+                };
+                setEditableProducts([newProd, ...editableProducts]); // Thêm lên đầu
+                setHasChanges(true);
+            };
+
+            const handleDeleteRow = (index) => {
+                if(confirm("Xóa sản phẩm này khỏi danh sách?")) {
+                    const updated = [...editableProducts];
+                    updated.splice(index, 1);
+                    setEditableProducts(updated);
+                    setHasChanges(true);
                 }
-            }
+            };
+
+            const handleClearAll = () => {
+                if(confirm("⚠️ CẢNH BÁO: Anh có chắc chắn muốn XÓA SẠCH toàn bộ sản phẩm trong kho không?\n\n(Lưu ý: Sau khi xóa, anh cần bấm nút 'LƯU THAY ĐỔI' để chính thức xóa khỏi máy tính)")) {
+                    setEditableProducts([]);
+                    setHasChanges(true);
+                }
+            };
+
+            const handleSaveAll = () => {
+                if (localDbHelper.saveProducts(editableProducts)) {
+                    setHasChanges(false);
+                    alert("Đã lưu danh sách sản phẩm thành công vào bộ nhớ máy tính!");
+                    onReload(); // Cập nhật lại app ngoài
+                }
+            };
 
             if (!isOpen) return null;
 
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                            <h3 className="text-lg font-bold flex items-center gap-2"><Icons.Cloud /> Kho Sản Phẩm Online {window.isConfigured ? '(Đã kết nối)' : '(Offline)'}</h3>
-                            <button onClick={onClose} className="text-gray-500 hover:text-gray-800">✕</button>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-2 sm:p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[90vh] md:h-[85vh] flex flex-col overflow-hidden border border-gray-200">
+                        {/* Header Modal */}
+                        <div className="p-3 md:p-4 border-b flex justify-between items-center bg-gray-50 shadow-sm relative z-10">
+                            <div>
+                                <h3 className="text-base md:text-lg font-bold flex items-center gap-2 text-gray-800">
+                                    <Icons.Database /> Kho Sản Phẩm (Lưu trên máy)
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1">Sửa trực tiếp các ô bên dưới. Dữ liệu siêu tốc không cần mạng.</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button onClick={onClose} className="text-gray-400 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 transition-colors">✕</button>
+                            </div>
                         </div>
-                        <div className="p-4 bg-blue-50 text-sm text-blue-800">
-                            {window.isConfigured ? "Danh sách này được đồng bộ Online." : "Bạn đang ở chế độ Offline. Vui lòng cấu hình Firebase để dùng tính năng này."}
-                        </div>
-                        {window.isConfigured && (
-                            <div className="p-4 flex gap-2">
-                                <label className={`flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded cursor-pointer ${uploading?'opacity-50':''}`}>
-                                    {uploading ? 'Đang tải lên...' : 'Nạp Excel vào Cloud'}
+                        
+                        {/* Toolbar Modal */}
+                        <div className="p-3 md:p-4 bg-sky-50 border-b border-sky-100 flex flex-wrap gap-3 items-center justify-between shadow-inner relative z-10">
+                            <div className="flex flex-wrap gap-2">
+                                <label className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm text-white rounded shadow transition-colors w-full sm:w-auto ${uploading ? 'bg-orange-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 cursor-pointer'}`}>
+                                    <Icons.Upload size={14}/> {uploading ? "Đang đọc..." : "Nạp từ Excel"}
                                     <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} disabled={uploading} className="hidden"/>
                                 </label>
-                                <div className="text-xs text-gray-500 flex items-center ml-2">Tổng: {dbProducts.length} sản phẩm</div>
+                                <button onClick={handleAddBlankProduct} className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm rounded shadow transition-colors w-full sm:w-auto justify-center">
+                                    <Icons.Plus size={14}/> Thêm thủ công
+                                </button>
+                                <button onClick={handleClearAll} className="flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs md:text-sm rounded shadow transition-colors w-full sm:w-auto justify-center" title="Xóa toàn bộ để nạp file mới">
+                                    <Icons.Trash2 size={14}/> Xóa tất cả
+                                </button>
                             </div>
-                        )}
-                        <div className="flex-1 overflow-auto p-4">
-                            <table className="w-full border-collapse border text-sm">
-                                <thead className="bg-gray-100 sticky top-0">
-                                    <tr><th className="border p-2 text-left">Tên SP</th><th className="border p-2 text-left">Giá</th><th className="border p-2 text-left">Hãng</th><th className="border p-2 w-10">Xóa</th></tr>
+
+                            <div className="flex items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0">
+                                <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Tổng: {editableProducts.length} SP</span>
+                                <button 
+                                    onClick={handleSaveAll} 
+                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 text-sm text-white rounded shadow-md transition-all ${hasChanges ? 'bg-orange-600 hover:bg-orange-700 animate-pulse ring-2 ring-orange-400 ring-offset-2' : 'bg-sky-600 hover:bg-sky-700 opacity-90'}`}
+                                >
+                                    <Icons.Save size={16}/> {hasChanges ? 'LƯU THAY ĐỔI NGAY' : 'Đã Lưu'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Table Area */}
+                        <div className="flex-1 overflow-x-auto overflow-y-auto bg-gray-50 hide-scrollbar relative">
+                            <table className="w-full min-w-[700px] border-collapse text-xs md:text-sm bg-white shadow-sm">
+                                <thead className="bg-gray-200 sticky top-0 shadow-sm z-20">
+                                    <tr>
+                                        <th className="border-b p-2 md:p-3 text-left w-10 text-gray-600">#</th>
+                                        <th className="border-b border-l p-2 md:p-3 text-left text-gray-600">Tên Sản Phẩm</th>
+                                        <th className="border-b border-l p-2 md:p-3 text-left w-32 text-gray-600">Giá Bán</th>
+                                        <th className="border-b border-l p-2 md:p-3 text-left w-24 text-gray-600">ĐVT</th>
+                                        <th className="border-b border-l p-2 md:p-3 text-left w-32 text-gray-600">Hãng</th>
+                                        <th className="border-b border-l p-2 md:p-3 text-left w-20 text-gray-600">BH(T)</th>
+                                        <th className="border-b border-l p-2 md:p-3 w-12 md:w-16 text-center text-gray-600">Xóa</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                    {dbProducts.map(p => (
-                                        <tr key={p.id} className="hover:bg-gray-50">
-                                            <td className="border p-2">{p.TenSP}</td>
-                                            <td className="border p-2 font-bold text-orange-600">{new Intl.NumberFormat('vi-VN').format(p.Gia)}</td>
-                                            <td className="border p-2">{p.Hang}</td>
-                                            <td className="border p-2 text-center"><button onClick={() => handleDelete(p.id)} className="text-red-500 hover:bg-red-100 p-1 rounded"><Icons.Trash2 /></button></td>
+                                    {editableProducts.length === 0 && (
+                                        <tr><td colSpan="7" className="text-center p-12 text-gray-400 text-base">Kho trống. Hãy nạp file Excel hoặc Thêm thủ công.</td></tr>
+                                    )}
+                                    {editableProducts.map((p, idx) => (
+                                        <tr key={idx} className="hover:bg-sky-50 transition-colors border-b border-gray-100 group">
+                                            <td className="p-2 text-center text-gray-400">{idx + 1}</td>
+                                            <td className="p-1 border-l border-gray-100">
+                                                <input 
+                                                    type="text" 
+                                                    value={p.TenSP} 
+                                                    onChange={(e) => handleFieldChange(idx, 'TenSP', e.target.value)}
+                                                    className="w-full px-2 py-1.5 bg-transparent border border-transparent focus:border-sky-400 focus:bg-white focus:ring-1 ring-sky-200 outline-none rounded font-medium text-gray-800 transition-all"
+                                                    placeholder="Tên sản phẩm..."
+                                                />
+                                            </td>
+                                            <td className="p-1 border-l border-gray-100 relative">
+                                                <input 
+                                                    type="number" 
+                                                    value={p.Gia} 
+                                                    onChange={(e) => handleFieldChange(idx, 'Gia', parseInt(e.target.value) || 0)}
+                                                    className="w-full px-2 py-1.5 bg-transparent border border-transparent focus:border-sky-400 focus:bg-white focus:ring-1 ring-sky-200 outline-none rounded font-bold text-sky-600 text-right transition-all pr-5"
+                                                />
+                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-[10px]">đ</span>
+                                            </td>
+                                            <td className="p-1 border-l border-gray-100">
+                                                <input 
+                                                    type="text" 
+                                                    value={p.DVT} 
+                                                    onChange={(e) => handleFieldChange(idx, 'DVT', e.target.value)}
+                                                    className="w-full px-2 py-1.5 bg-transparent border border-transparent focus:border-sky-400 focus:bg-white focus:ring-1 ring-sky-200 outline-none rounded text-center transition-all text-gray-600"
+                                                />
+                                            </td>
+                                            <td className="p-1 border-l border-gray-100">
+                                                <input 
+                                                    type="text" 
+                                                    value={p.Hang} 
+                                                    onChange={(e) => handleFieldChange(idx, 'Hang', e.target.value)}
+                                                    className="w-full px-2 py-1.5 bg-transparent border border-transparent focus:border-sky-400 focus:bg-white focus:ring-1 ring-sky-200 outline-none rounded text-center uppercase transition-all text-gray-600"
+                                                />
+                                            </td>
+                                            <td className="p-1 border-l border-gray-100">
+                                                <input 
+                                                    type="text" 
+                                                    value={p.BaoHanh} 
+                                                    onChange={(e) => handleFieldChange(idx, 'BaoHanh', e.target.value)}
+                                                    className="w-full px-2 py-1.5 bg-transparent border border-transparent focus:border-sky-400 focus:bg-white focus:ring-1 ring-sky-200 outline-none rounded text-center transition-all text-gray-600"
+                                                />
+                                            </td>
+                                            <td className="p-1 border-l border-gray-100 text-center">
+                                                <button onClick={() => handleDeleteRow(idx)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors" title="Xóa dòng này">
+                                                    <Icons.Trash2 size={16}/>
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -289,7 +394,7 @@
                 onChange(e);
                 if (text.length > 0 && dbProducts.length > 0) {
                     const lowerText = text.toLowerCase();
-                    const filtered = dbProducts.filter(p => (p.TenSP && String(p.TenSP).toLowerCase().includes(lowerText))).slice(0, 10);
+                    const filtered = dbProducts.filter(p => (p.TenSP && String(p.TenSP).toLowerCase().includes(lowerText))).slice(0, 15);
                     setSuggestions(filtered);
                     setShowSuggestions(true);
                 } else { setShowSuggestions(false); }
@@ -301,13 +406,16 @@
 
             return (
                 <div className="relative w-full" ref={wrapperRef}>
-                    <SmartTextarea value={value} onChange={handleInputChange} className={`bg-blue-50/30 hover:bg-blue-50 focus:bg-white focus:ring-1 ring-blue-300 outline-none w-full transition-colors ${className}`} style={style} placeholder={placeholder} />
+                    <SmartTextarea value={value} onChange={handleInputChange} className={`bg-sky-50/30 hover:bg-sky-50 focus:bg-white focus:ring-1 ring-sky-300 outline-none w-full transition-colors ${className}`} style={style} placeholder={placeholder} />
                     {showSuggestions && suggestions.length > 0 && (
-                        <div className="suggestions-list">
+                        <div className="suggestions-list shadow-2xl border-sky-200">
                             {suggestions.map((item, idx) => (
-                                <div key={idx} className="suggestion-item" onClick={() => handleSelectSuggestion(item)}>
-                                    <div className="font-bold">{item.TenSP}</div>
-                                    <div className="text-gray-500 flex justify-between"><span>{item.Hang}</span><span className="suggestion-price">{new Intl.NumberFormat('vi-VN').format(item.Gia || 0)} đ</span></div>
+                                <div key={idx} className="suggestion-item hover:bg-sky-50 border-b border-gray-100 last:border-0" onClick={() => handleSelectSuggestion(item)}>
+                                    <div className="font-bold text-gray-800">{item.TenSP}</div>
+                                    <div className="text-gray-500 flex justify-between mt-1 text-[10px] md:text-xs">
+                                        <span className="bg-gray-100 px-1 rounded font-medium">{item.Hang || 'N/A'}</span>
+                                        <span className="suggestion-price text-sky-600">{new Intl.NumberFormat('vi-VN').format(item.Gia || 0)} đ</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -324,17 +432,17 @@
             const [data, setData] = useState({
                 fileName: "Báo giá mới",
                 projectTitle: "BÁO GIÁ_Smart Home",
-                companyInfo: { logo: null, name: "CÔNG TY TNHH TM DV & XNK PHÚ THÁI", subName: "Smarthome Phú Thái - Nhà phân phối chính thức thiết bị nhà thông minh LUMI", address: "32 Đường số 4, Phường An Lạc, TP. Hồ Chí Minh", website: "smarthomephuthai.vn", hotline: "0908680247" },
+                companyInfo: { logo: null, name: "Aqara Smarthome", subName: "Giải pháp chiếu sáng chuyên nghiệp và thông minh toàn diện", address: "truongdino4@gmail.com", website: "Trường Otiz", hotline: "0363035960" },
                 customerInfo: { companyName: "CÔNG TY TNHH TƯ VẤN THIẾT KẾ VÀ XÂY DỰNG NGUYÊN KHÁNH", mst: "316419615", address: "L18-11-13, Tầng 18, Tòa nhà Vincom Center Đồng Khởi, 72 Lê Thánh Tôn, P. Bến Nghé, Q.1, TP.HCM", contactName: "Anh Khánh", phone: "0911981618", quoteDate: new Date().toISOString().split('T')[0] },
                 items: [{ id: 1, title: "(I) BỘ ĐIỀU KHIỂN TRUNG TÂM + ĐIỀU HÒA", products: [{ id: 101, name: "Bộ điều khiển trung tâm Camera Hub G3", description: "", image: null, brand: "AQARA", warranty: 18, qty: 1, unit: "Bộ", price: 3299000 }] }],
-                financials: { discountType: 'amount', discountValue: 0, installationType: 'amount', installationValue: 11000000 }
+                financials: { discountType: 'amount', discountValue: 0, installationType: 'amount', installationValue: 11000000 },
+                paymentInfo: { show: false, title: "Tài khoản cá nhân:", stk: "STK: ... - Ngân hàng", ctk: "CTK: Trường Otiz" }
             });
 
-            const reloadProducts = async () => {
-                if (window.isConfigured) {
-                    const prods = await fbHelper.getProducts();
-                    setDbProducts(prods);
-                }
+            // Tải dữ liệu từ LocalStorage khi khởi động
+            const reloadProducts = () => {
+                const prods = localDbHelper.getProducts();
+                setDbProducts(prods);
             };
 
             useEffect(() => { reloadProducts(); }, []);
@@ -342,7 +450,7 @@
             const handleFileUpload = (e, callback) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => callback(reader.result); reader.readAsDataURL(file); } };
             const handleAutoFillProduct = (catIdx, prodIdx, productData) => {
                 const newData = {...data}; const prod = newData.items[catIdx].products[prodIdx];
-                prod.name = productData.TenSP; prod.description = productData.MoTa; prod.brand = productData.Hang; prod.warranty = productData.BaoHanh; prod.unit = productData.DVT; prod.price = parseFloat(productData.Gia) || 0;
+                prod.name = productData.TenSP; prod.description = productData.MoTa || ''; prod.brand = productData.Hang || ''; prod.warranty = productData.BaoHanh || '12'; prod.unit = productData.DVT || 'Cái'; prod.price = parseFloat(productData.Gia) || 0;
                 setData(newData);
             };
             const calculateTotal = () => {
@@ -362,136 +470,173 @@
 
             const renderEditable = (value, onChange, placeholder, className, isArea = false, style = {}) => {
                 if (isPreviewMode) return <div className={`${className} whitespace-pre-wrap`} style={style}>{value}</div>;
-                if (isArea) return <SmartTextarea value={value} onChange={onChange} className={`bg-blue-50/30 hover:bg-blue-50 focus:bg-white focus:ring-1 ring-blue-300 outline-none w-full transition-colors ${className}`} style={style} placeholder={placeholder} />;
-                return <input value={value} onChange={onChange} className={`bg-blue-50/30 hover:bg-blue-50 focus:bg-white focus:ring-1 ring-blue-300 outline-none w-full transition-colors ${className}`} placeholder={placeholder} style={style} />;
+                if (isArea) return <SmartTextarea value={value} onChange={onChange} className={`bg-sky-50/30 hover:bg-sky-50 focus:bg-white focus:ring-1 ring-sky-300 outline-none w-full transition-colors ${className}`} style={style} placeholder={placeholder} />;
+                return <input value={value} onChange={onChange} className={`bg-sky-50/30 hover:bg-sky-50 focus:bg-white focus:ring-1 ring-sky-300 outline-none w-full transition-colors ${className}`} placeholder={placeholder} style={style} />;
             };
 
             return (
-                <div className="min-h-screen p-4 pb-20 bg-gray-100">
-                    <ConfigWarningModal />
+                <div className="min-h-screen px-2 py-4 md:p-4 pb-24 bg-gray-100">
                     <ProductManager isOpen={showProductManager} onClose={() => setShowProductManager(false)} dbProducts={dbProducts} onReload={reloadProducts} />
 
-                    <div className="fixed-toolbar fixed top-0 left-0 right-0 bg-white shadow-md z-50 p-3 flex items-center justify-between border-b border-orange-200">
-                        <div className="flex items-center gap-4">
-                            <div className="font-bold text-orange-600 text-lg flex items-center gap-2"><Icons.Database /> Báo Giá Online (Firebase)</div>
-                            <input value={data.fileName} onChange={(e) => setData({...data, fileName: e.target.value})} className="border-b border-gray-300 focus:border-orange-500 outline-none px-2 py-1 w-64 bg-transparent" placeholder="Tên file lưu..." />
+                    {/* Toolbar thông minh tự gập trên mobile */}
+                    <div className="fixed-toolbar fixed top-0 left-0 right-0 bg-white shadow-md z-50 p-2 md:p-3 flex flex-col sm:flex-row items-center justify-between border-b border-sky-200 gap-2">
+                        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                            <div className="font-bold text-sky-600 text-sm md:text-lg flex items-center gap-1 md:gap-2 whitespace-nowrap"><Icons.Database /> Báo Giá Mượt Mà</div>
+                            <input value={data.fileName} onChange={(e) => setData({...data, fileName: e.target.value})} className="border-b border-gray-300 focus:border-sky-500 outline-none px-2 py-1 w-full max-w-[180px] sm:max-w-xs md:w-64 bg-transparent text-sm md:text-base text-center sm:text-left" placeholder="Tên file lưu..." />
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => setShowProductManager(true)} className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow-sm font-medium">
-                                <Icons.Settings /> Quản lý Sản Phẩm {window.isConfigured ? '' : '(Offline)'}
+                        <div className="flex flex-wrap justify-center gap-2 w-full sm:w-auto">
+                            <button onClick={() => setShowProductManager(true)} className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow-sm font-medium text-xs md:text-sm">
+                                <Icons.Settings size={14} /> <span className="hidden min-[400px]:inline">Kho Sản Phẩm</span>
                             </button>
-                            <button onClick={() => setIsPreviewMode(!isPreviewMode)} className={`flex items-center gap-2 px-4 py-2 text-white rounded shadow-sm font-medium transition-colors ${isPreviewMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'}`}>{isPreviewMode ? <><Icons.Edit /> Quay lại Sửa</> : <><Icons.Eye /> Xem & In</>}</button>
-                            <button onClick={handlePrint} className="bg-orange-600 text-white px-4 py-2 rounded shadow hover:bg-orange-700 flex items-center gap-2"><Icons.Printer size={16}/> IN NGAY</button>
+                            <button onClick={() => setIsPreviewMode(!isPreviewMode)} className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-white rounded shadow-sm font-medium transition-colors text-xs md:text-sm ${isPreviewMode ? 'bg-sky-600 hover:bg-sky-700' : 'bg-gray-600 hover:bg-gray-700'}`}>{isPreviewMode ? <><Icons.Edit size={14}/> Sửa</> : <><Icons.Eye size={14}/> Xem</>}</button>
+                            <button onClick={handlePrint} className="bg-sky-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded shadow hover:bg-sky-700 flex items-center gap-1 md:gap-2 text-xs md:text-sm whitespace-nowrap"><Icons.Printer size={14}/> IN PDF</button>
                         </div>
                     </div>
 
-                    <div className={`mt-24 flex justify-center pb-10 print-container`}>
-                        <div className="bg-white shadow-2xl relative border border-gray-200 print-container" style={{ width: '297mm', padding: '10mm', minHeight: '210mm' }}>
-                            {/* HEADER */}
-                            <div className="flex items-start gap-6 border-b-2 border-orange-600 pb-4 mb-4">
+                    {/* Vùng văn bản tự động co giãn theo thiết bị (responsive container) */}
+                    <div className={`mt-24 sm:mt-20 md:mt-24 flex justify-center pb-10 print-container w-full`}>
+                        <div className="bg-white shadow-lg md:shadow-2xl relative border border-gray-200 w-full max-w-full md:max-w-[297mm] p-3 sm:p-6 md:p-[10mm] min-h-auto md:min-h-[210mm] print-container mx-auto">
+                            
+                            {/* HEADER: Gập dọc trên Mobile, Ngang trên Laptop */}
+                            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 border-b-2 border-sky-600 pb-4 mb-4 text-center md:text-left">
                                 <div className="flex-shrink-0">
-                                    <label className={`cursor-pointer group relative block w-48 h-24 border-2 rounded flex items-center justify-center overflow-hidden ${isPreviewMode ? 'border-transparent' : 'border-dashed border-gray-300 hover:border-orange-500'}`}>
+                                    <label className={`cursor-pointer group relative block w-32 h-16 md:w-48 md:h-24 border-2 rounded flex items-center justify-center overflow-hidden mx-auto md:mx-0 ${isPreviewMode ? 'border-transparent' : 'border-dashed border-gray-300 hover:border-sky-500'}`}>
                                         <input type="file" disabled={isPreviewMode} onChange={(e) => handleFileUpload(e, (base64) => setData({...data, companyInfo: {...data.companyInfo, logo: base64}}))} />
-                                        {data.companyInfo.logo ? <img src={data.companyInfo.logo} className="w-full h-full object-contain" /> : !isPreviewMode && <div className="text-gray-400 text-center text-xs group-hover:text-orange-500 ui-control"><Icons.Upload size={24} /> <br/>Tải Logo</div>}
+                                        {data.companyInfo.logo ? <img src={data.companyInfo.logo} className="w-full h-full object-contain" /> : !isPreviewMode && <div className="text-gray-400 text-center text-[10px] md:text-xs group-hover:text-sky-500 ui-control"><Icons.Upload size={20} className="mx-auto" />Tải Logo</div>}
                                     </label>
                                 </div>
-                                <div className="flex-grow flex flex-col justify-center">
-                                    {renderEditable(data.companyInfo.name, (e) => setData({...data, companyInfo: {...data.companyInfo, name: e.target.value}}), "Tên Công Ty", "font-black text-xl uppercase")}
-                                    {renderEditable(data.companyInfo.subName, (e) => setData({...data, companyInfo: {...data.companyInfo, subName: e.target.value}}), "Mô tả phụ", "text-sm italic text-gray-600")}
-                                    <div className="text-xs space-y-1 mt-1">
-                                        <div className="flex"><strong className="w-24">Địa chỉ:</strong>{renderEditable(data.companyInfo.address, (e) => setData({...data, companyInfo: {...data.companyInfo, address: e.target.value}}), "", "flex-1")}</div>
-                                        <div className="flex"><strong className="w-24">Liên hệ:</strong><div className="flex w-full"><span className="mr-1">Web:</span>{renderEditable(data.companyInfo.website, (e) => setData({...data, companyInfo: {...data.companyInfo, website: e.target.value}}), "", "mr-2")} <span className="mr-1">Hotline:</span>{renderEditable(data.companyInfo.hotline, (e) => setData({...data, companyInfo: {...data.companyInfo, hotline: e.target.value}}), "", "")}</div></div>
+                                <div className="flex-grow flex flex-col justify-center w-full">
+                                    {renderEditable(data.companyInfo.name, (e) => setData({...data, companyInfo: {...data.companyInfo, name: e.target.value}}), "Tên Công Ty", "font-black text-lg md:text-xl uppercase text-center md:text-left")}
+                                    {renderEditable(data.companyInfo.subName, (e) => setData({...data, companyInfo: {...data.companyInfo, subName: e.target.value}}), "Mô tả phụ", "text-xs md:text-sm italic text-gray-600 text-center md:text-left mb-2 md:mb-0")}
+                                    <div className="text-[10px] md:text-xs space-y-1 mt-1 flex flex-col items-center md:items-start">
+                                        <div className="flex w-full justify-center md:justify-start"><strong className="w-16 md:w-24 shrink-0 text-left">Email:</strong>{renderEditable(data.companyInfo.address, (e) => setData({...data, companyInfo: {...data.companyInfo, address: e.target.value}}), "", "flex-1")}</div>
+                                        <div className="flex w-full justify-center md:justify-start"><strong className="w-16 md:w-24 shrink-0 text-left">Liên hệ:</strong>{renderEditable(data.companyInfo.website, (e) => setData({...data, companyInfo: {...data.companyInfo, website: e.target.value}}), "", "flex-1")}</div>
+                                        <div className="flex w-full justify-center md:justify-start"><strong className="w-16 md:w-24 shrink-0 text-left">Hotline:</strong>{renderEditable(data.companyInfo.hotline, (e) => setData({...data, companyInfo: {...data.companyInfo, hotline: e.target.value}}), "", "flex-1 font-bold text-gray-900")}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-end mb-6">
-                                <div className="w-full pr-8">{renderEditable(data.projectTitle || "", (e) => setData({...data, projectTitle: e.target.value}), "TIÊU ĐỀ BÁO GIÁ", "text-3xl font-bold text-orange-600 uppercase")}</div>
-                                <div className="text-right flex-shrink-0 text-xs text-gray-500 italic">Ngày báo giá: {new Date(data.customerInfo.quoteDate).toLocaleDateString('vi-VN')}</div>
+                            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end mb-4 md:mb-6 gap-2">
+                                <div className="w-full sm:w-auto text-center sm:text-left pr-0 sm:pr-8">{renderEditable(data.projectTitle || "", (e) => setData({...data, projectTitle: e.target.value}), "TIÊU ĐỀ BÁO GIÁ", "text-2xl md:text-3xl font-bold text-sky-600 uppercase w-full text-center sm:text-left")}</div>
+                                <div className="text-center sm:text-right flex-shrink-0 text-[10px] md:text-xs text-gray-500 italic">Ngày báo giá: {new Date(data.customerInfo.quoteDate).toLocaleDateString('vi-VN')}</div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-xs mb-6">
-                                <div><div className="flex mb-2 items-center"><span className="font-bold w-24 text-orange-700">Khách hàng:</span>{renderEditable(data.customerInfo.companyName, (e) => setData({...data, customerInfo: {...data.customerInfo, companyName: e.target.value}}), "", "flex-1 font-medium", true)}</div><div className="flex mb-2 items-center"><span className="font-bold w-24 text-orange-700">Địa chỉ:</span>{renderEditable(data.customerInfo.address, (e) => setData({...data, customerInfo: {...data.customerInfo, address: e.target.value}}), "", "flex-1", true)}</div></div>
-                                <div><div className="flex mb-2 items-center"><span className="font-bold w-24 text-orange-700">Công ty:</span>{renderEditable(data.customerInfo.contactName, (e) => setData({...data, customerInfo: {...data.customerInfo, contactName: e.target.value}}), "", "flex-1")}</div><div className="flex mb-2 items-center"><div className="flex w-1/2 pr-2"><span className="font-bold w-16 text-orange-700">SĐT:</span>{renderEditable(data.customerInfo.phone, (e) => setData({...data, customerInfo: {...data.customerInfo, phone: e.target.value}}), "", "flex-1")}</div><div className="flex w-1/2 pl-2"><span className="font-bold w-10 text-orange-700">MST:</span>{renderEditable(data.customerInfo.mst, (e) => setData({...data, customerInfo: {...data.customerInfo, mst: e.target.value}}), "", "flex-1")}</div></div></div>
+                            {/* Thông tin khách hàng xếp 1 cột trên đt, 2 cột trên máy tính */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2 text-[10px] md:text-xs mb-6 bg-gray-50 p-3 rounded-lg border border-gray-100 print:bg-transparent print:border-none print:p-0">
+                                <div><div className="flex mb-2 items-center"><span className="font-bold w-20 md:w-24 text-sky-700 shrink-0">Khách hàng:</span>{renderEditable(data.customerInfo.companyName, (e) => setData({...data, customerInfo: {...data.customerInfo, companyName: e.target.value}}), "", "flex-1 font-medium bg-transparent", true)}</div><div className="flex mb-2 items-center"><span className="font-bold w-20 md:w-24 text-sky-700 shrink-0">Địa chỉ:</span>{renderEditable(data.customerInfo.address, (e) => setData({...data, customerInfo: {...data.customerInfo, address: e.target.value}}), "", "flex-1 bg-transparent", true)}</div></div>
+                                <div><div className="flex mb-2 items-center"><span className="font-bold w-20 md:w-24 text-sky-700 shrink-0">Công ty:</span>{renderEditable(data.customerInfo.contactName, (e) => setData({...data, customerInfo: {...data.customerInfo, contactName: e.target.value}}), "", "flex-1 bg-transparent")}</div><div className="flex flex-col min-[400px]:flex-row gap-2 min-[400px]:gap-0 mb-2"><div className="flex w-full min-[400px]:w-1/2 min-[400px]:pr-2 items-center"><span className="font-bold w-20 min-[400px]:w-16 text-sky-700 shrink-0">SĐT:</span>{renderEditable(data.customerInfo.phone, (e) => setData({...data, customerInfo: {...data.customerInfo, phone: e.target.value}}), "", "flex-1 bg-transparent")}</div><div className="flex w-full min-[400px]:w-1/2 min-[400px]:pl-2 items-center"><span className="font-bold w-20 min-[400px]:w-12 text-sky-700 shrink-0">MST:</span>{renderEditable(data.customerInfo.mst, (e) => setData({...data, customerInfo: {...data.customerInfo, mst: e.target.value}}), "", "flex-1 bg-transparent")}</div></div></div>
                             </div>
-                            <div className="mb-4 text-xs italic text-gray-600">Smarthome Phú Thái xin chân thành cảm ơn Quý Khách đã quan tâm đến sản phẩm của chúng tôi, phúc đáp theo yêu cầu của Quý Khách chúng tôi xin gửi bảng báo giá như sau:</div>
+                            
+                            <div className="mb-4 text-[10px] md:text-xs italic text-gray-600 text-justify">Aqara Smarthome xin chân thành cảm ơn Quý Khách đã quan tâm đến sản phẩm của chúng tôi, phúc đáp theo yêu cầu của Quý Khách chúng tôi xin gửi bảng báo giá như sau:</div>
 
-                            <table className="w-full mb-8 border-collapse">
-                                <thead>
-                                    <tr>
-                                        {["STT","Hình ảnh","Tên thiết bị / Mô tả tính năng","Hãng","BH(T)","SL","ĐVT","Đơn giá","Thành tiền"].map((h,i) => (<th key={i} className={`bg-orange-600 text-white font-bold text-[11px] py-2 uppercase border border-orange-600 ${i===1?'w-24':i===2?'':'w-auto'}`}>{h}</th>))}
-                                        {!isPreviewMode && <th className="bg-gray-700 text-white font-bold text-[11px] py-2 uppercase border border-gray-700 w-10 delete-col">Xóa</th>}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.items.map((cat, catIdx) => (
-                                        <React.Fragment key={cat.id}>
-                                            <tr className="bg-orange-100 break-inside-avoid">
-                                                <td colSpan={!isPreviewMode ? 10 : 9} className="px-2 py-2 border-l border-r border-orange-200">
-                                                    <div className="flex items-center gap-2 group">
-                                                        <div className="flex-grow">{renderEditable(cat.title, (e) => {const d = {...data}; d.items[catIdx].title = e.target.value; setData(d)}, "", "font-bold text-orange-900 w-full uppercase")}</div>
-                                                        {!isPreviewMode && (
-                                                            <div className="flex-shrink-0 flex gap-1">
-                                                                <button onClick={() => addProduct(catIdx)} className="bg-orange-600 text-white p-1 rounded hover:bg-orange-700" title="Thêm sản phẩm"><Icons.Plus size={14}/></button>
-                                                                <button onClick={() => removeCategory(catIdx)} className="bg-red-500 text-white p-1 rounded hover:bg-red-600" title="Xóa hạng mục"><Icons.Trash2 size={14}/></button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {cat.products.map((p, pIdx) => (
-                                                <tr key={p.id} className="group hover:bg-orange-50 border-b border-l border-r border-gray-300 break-inside-avoid">
-                                                    <td className="text-center text-gray-500 text-[11px] align-top py-2 relative w-10 p-0"><div className="w-full h-full flex items-center justify-center">{pIdx + 1}</div></td>
-                                                    <td className="p-1 align-top w-24">
-                                                        <div className={`w-24 h-20 flex justify-center mx-auto ${isPreviewMode ? '' : 'bg-gray-50 border border-gray-100'}`}>
-                                                            <label className="cursor-pointer w-full h-full flex justify-center overflow-hidden">
-                                                                <input type="file" disabled={isPreviewMode} onChange={(e) => handleFileUpload(e, (b64) => updateItem(catIdx, pIdx, 'image', b64))} />
-                                                                {p.image ? <img src={p.image} className="w-full h-full object-contain" /> : !isPreviewMode && <div className="text-gray-300 flex flex-col items-center ui-control mt-4"><Icons.Upload size={14}/></div>}
-                                                            </label>
+                            {/* Bảng báo giá: Cuộn ngang trên điện thoại */}
+                            <div className="w-full overflow-x-auto hide-scrollbar mb-4 md:mb-8 pb-10 print:overflow-visible print:pb-0 border border-gray-200 rounded-t-lg print:border-none">
+                                <table className="w-full border-collapse print-table min-w-[700px] md:min-w-full">
+                                    <thead>
+                                        <tr>
+                                            {["STT","Hình ảnh","Tên thiết bị / Mô tả tính năng","Hãng","BH(T)","SL","ĐVT","Đơn giá","Thành tiền"].map((h,i) => (<th key={i} className={`bg-sky-600 text-white font-bold text-[10px] md:text-[11px] py-2 uppercase border border-sky-600 ${i===1?'w-16 md:w-24':i===2?'':'w-auto'} ${i===3?'w-12 md:w-20':''} ${i===4?'w-8 md:w-16':''} ${i===5?'w-8 md:w-14':''} ${i===6?'w-10 md:w-16':''} ${i===7?'w-20 md:w-28':''} ${i===8?'w-24 md:w-28':''}`}>{h}</th>))}
+                                            {!isPreviewMode && <th className="bg-gray-700 text-white font-bold text-[10px] md:text-[11px] py-2 uppercase border border-gray-700 w-10 delete-col">Xóa</th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.items.map((cat, catIdx) => (
+                                            <React.Fragment key={cat.id}>
+                                                <tr className="bg-sky-100 break-inside-avoid">
+                                                    <td colSpan={!isPreviewMode ? 10 : 9} className="px-2 py-2 border-l border-r border-sky-200">
+                                                        <div className="flex items-center gap-2 group">
+                                                            <div className="flex-grow">{renderEditable(cat.title, (e) => {const d = {...data}; d.items[catIdx].title = e.target.value; setData(d)}, "", "font-bold text-sky-900 w-full uppercase text-xs md:text-sm")}</div>
+                                                            {!isPreviewMode && (
+                                                                <div className="flex-shrink-0 flex gap-1">
+                                                                    <button onClick={() => addProduct(catIdx)} className="bg-sky-600 text-white p-1 rounded hover:bg-sky-700" title="Thêm sản phẩm"><Icons.Plus size={14}/></button>
+                                                                    <button onClick={() => removeCategory(catIdx)} className="bg-red-500 text-white p-1 rounded hover:bg-red-600" title="Xóa hạng mục"><Icons.Trash2 size={14}/></button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </td>
-                                                    <td className="px-2 pt-1 align-top">
-                                                        <ProductAutocomplete value={p.name} onChange={(e) => updateItem(catIdx, pIdx, 'name', e.target.value)} onSelectProduct={(prodData) => handleAutoFillProduct(catIdx, pIdx, prodData)} dbProducts={dbProducts} isPreviewMode={isPreviewMode} placeholder="Nhập tên sản phẩm..." className="font-bold text-gray-800 text-[11px]" />
-                                                        {renderEditable(p.description, (e) => updateItem(catIdx, pIdx, 'description', e.target.value), "Mô tả chi tiết...", "text-gray-500 text-[10px] mt-1 text-justify", true)}
-                                                    </td>
-                                                    <td className="px-1 pt-2 align-top w-20">{renderEditable(p.brand, (e) => updateItem(catIdx, pIdx, 'brand', e.target.value), "", "text-center uppercase font-semibold text-[11px]")}</td>
-                                                    <td className="text-center pt-2 align-top w-16">{renderEditable(p.warranty, (e) => updateItem(catIdx, pIdx, 'warranty', e.target.value), "", "text-center text-[11px]")}</td>
-                                                    <td className="text-center pt-2 align-top w-14">{renderEditable(p.qty, (e) => updateItem(catIdx, pIdx, 'qty', parseInt(e.target.value)||0), "0", "text-center font-bold text-[11px]")}</td>
-                                                    <td className="text-center pt-2 align-top w-16">{renderEditable(p.unit, (e) => updateItem(catIdx, pIdx, 'unit', e.target.value), "", "text-center text-[11px]")}</td>
-                                                    <td className="text-right px-2 font-medium pt-2 align-top w-28">{renderEditable(formatCurrency(p.price), (e) => updateItem(catIdx, pIdx, 'price', parseInt(e.target.value.replace(/[^0-9]/g,''))||0), "0", "text-right text-[11px]")}</td>
-                                                    <td className="text-right px-2 font-bold text-orange-800 pt-2 align-top text-[11px] w-28">{formatCurrency(p.qty * p.price)}</td>
-                                                    {!isPreviewMode && <td className="text-center pt-2 align-top w-10 delete-col bg-gray-50 border-gray-200"><button onClick={() => removeProduct(catIdx, pIdx)} className="text-red-400 hover:text-red-600 p-1 rounded transition-colors"><Icons.Trash2 size={16}/></button></td>}
                                                 </tr>
-                                            ))}
-                                        </React.Fragment>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {!isPreviewMode && <div className="ui-control mt-4 text-center"><button onClick={addCategory} className="border border-dashed border-orange-400 text-orange-600 px-4 py-2 rounded text-xs hover:bg-orange-50"><Icons.Plus size={14}/> Thêm Hạng Mục</button></div>}
+                                                {cat.products.map((p, pIdx) => (
+                                                    <tr key={p.id} className="group hover:bg-sky-50 border-b border-l border-r border-gray-300 break-inside-avoid">
+                                                        <td className="text-center text-gray-500 text-[10px] md:text-[11px] align-top py-2 relative w-8 md:w-10 p-0"><div className="w-full h-full flex items-center justify-center">{pIdx + 1}</div></td>
+                                                        <td className="p-1 align-top w-16 md:w-24">
+                                                            <div className={`w-14 h-14 md:w-20 md:h-20 flex justify-center mx-auto ${isPreviewMode ? '' : 'bg-gray-50 border border-gray-100 rounded'}`}>
+                                                                <label className="cursor-pointer w-full h-full flex justify-center overflow-hidden items-center">
+                                                                    <input type="file" disabled={isPreviewMode} onChange={(e) => handleFileUpload(e, (b64) => updateItem(catIdx, pIdx, 'image', b64))} />
+                                                                    {p.image ? <img src={p.image} className="w-full h-full object-contain" /> : !isPreviewMode && <div className="text-gray-300 flex flex-col items-center ui-control"><Icons.Upload size={14}/></div>}
+                                                                </label>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-2 pt-1 align-top relative">
+                                                            <ProductAutocomplete value={p.name} onChange={(e) => updateItem(catIdx, pIdx, 'name', e.target.value)} onSelectProduct={(prodData) => handleAutoFillProduct(catIdx, pIdx, prodData)} dbProducts={dbProducts} isPreviewMode={isPreviewMode} placeholder="Nhập tên sản phẩm..." className="font-bold text-gray-800 text-[11px] md:text-xs" />
+                                                            {renderEditable(p.description, (e) => updateItem(catIdx, pIdx, 'description', e.target.value), "Mô tả chi tiết...", "text-gray-500 text-[9px] md:text-[10px] mt-1 text-justify", true)}
+                                                        </td>
+                                                        <td className="px-1 pt-2 align-top w-12 md:w-20">{renderEditable(p.brand, (e) => updateItem(catIdx, pIdx, 'brand', e.target.value), "", "text-center uppercase font-semibold text-[10px] md:text-[11px]")}</td>
+                                                        <td className="text-center pt-2 align-top w-8 md:w-16">{renderEditable(p.warranty, (e) => updateItem(catIdx, pIdx, 'warranty', e.target.value), "", "text-center text-[10px] md:text-[11px]")}</td>
+                                                        <td className="text-center pt-2 align-top w-8 md:w-14">{renderEditable(p.qty, (e) => updateItem(catIdx, pIdx, 'qty', parseInt(e.target.value)||0), "0", "text-center font-bold text-[10px] md:text-[11px]")}</td>
+                                                        <td className="text-center pt-2 align-top w-10 md:w-16">{renderEditable(p.unit, (e) => updateItem(catIdx, pIdx, 'unit', e.target.value), "", "text-center text-[10px] md:text-[11px]")}</td>
+                                                        <td className="text-right px-1 md:px-2 font-medium pt-2 align-top w-20 md:w-28">{renderEditable(formatCurrency(p.price), (e) => updateItem(catIdx, pIdx, 'price', parseInt(e.target.value.replace(/[^0-9]/g,''))||0), "0", "text-right text-[10px] md:text-[11px]")}</td>
+                                                        <td className="text-right px-1 md:px-2 font-bold text-sky-800 pt-2 align-top text-[10px] md:text-[11px] w-24 md:w-28">{formatCurrency(p.qty * p.price)}</td>
+                                                        {!isPreviewMode && <td className="text-center pt-2 align-top w-8 md:w-10 delete-col bg-gray-50 border-gray-200"><button onClick={() => removeProduct(catIdx, pIdx)} className="text-red-400 hover:text-red-600 p-1 rounded transition-colors"><Icons.Trash2 size={14}/></button></td>}
+                                                    </tr>
+                                                ))}
+                                            </React.Fragment>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             
-                            {/* ... Phần Footer ... */}
-                            <div className="flex mt-2 pt-2 gap-8 break-inside-avoid">
-                                <div className="w-1/2 grid grid-cols-2 gap-4 text-[10px] text-gray-600">
-                                    <div><h3 className="font-bold text-orange-700 mb-1">(1) Phí lắp đặt bao gồm:</h3><p>- Thi công phần cứng toàn bộ hệ thống Smarthome.</p><p>- Không bao gồm chi phí kéo dây điện, đục tường.</p><h3 className="font-bold text-orange-700 mb-1 mt-2">(2) Phí dịch vụ bao gồm:</h3><p>- Bảo hành tận nơi theo thời gian bảo hành sản phẩm.</p><p>- Kết nối toàn bộ hệ thống.</p><p>- Thiết kế hệ thống, Cấu hình tự động hóa.</p><p>- Chia phòng, đặt tên thiết bị, cấu hình tự động.</p><p>- Hướng dẫn khách hàng thao tác sử dụng.</p></div>
-                                    <div><h3 className="font-bold text-orange-700 mb-1">THÔNG TIN THANH TOÁN:</h3><div className="mb-2"><p className="font-bold text-black">Tài khoản công ty:</p><p>STK: 060212148213 - Sacombank</p><p>CTK: CÔNG TY TNHH TM DV & XNK PHÚ THÁI</p></div><div><p className="font-bold text-black">Tài khoản cá nhân:</p><p>STK: 88129129 - ACB</p><p>CTK: Lý Ngọc Vân</p></div></div>
+                            {!isPreviewMode && <div className="ui-control mt-2 mb-6 text-center"><button onClick={addCategory} className="border border-dashed border-sky-400 text-sky-600 px-4 py-2 rounded text-xs md:text-sm hover:bg-sky-50 shadow-sm w-full md:w-auto"><Icons.Plus size={14} className="inline mr-1"/> Thêm Hạng Mục (Nhóm) Mới</button></div>}
+                            
+                            {/* FOOTER: Gập dọc trên Mobile, Ngang trên Laptop */}
+                            <div className="flex flex-col md:flex-row mt-4 pt-4 gap-6 md:gap-8 break-inside-avoid border-t border-gray-200">
+                                {/* Cột Điều khoản & Thanh toán */}
+                                <div className="w-full md:w-1/2 flex flex-col sm:flex-row md:flex-col lg:flex-row gap-4 text-[10px] md:text-xs text-gray-600 order-2 md:order-1">
+                                    <div className="flex-1"><h3 className="font-bold text-sky-700 mb-1">(1) Phí lắp đặt bao gồm:</h3><p>- Thi công phần cứng toàn bộ hệ thống Smarthome.</p><p>- Không bao gồm chi phí kéo dây điện, đục tường.</p><h3 className="font-bold text-sky-700 mb-1 mt-2">(2) Phí dịch vụ bao gồm:</h3><p>- Bảo hành tận nơi theo thời gian bảo hành sản phẩm.</p><p>- Kết nối toàn bộ hệ thống.</p><p>- Thiết kế hệ thống, Cấu hình tự động hóa.</p><p>- Chia phòng, đặt tên thiết bị, cấu hình tự động.</p><p>- Hướng dẫn khách hàng thao tác sử dụng.</p></div>
+                                    <div className="flex-1 relative group mt-4 sm:mt-0 md:mt-4 lg:mt-0 bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-lg">
+                                        {!isPreviewMode && (
+                                            <div className="absolute right-2 md:-left-6 top-2 md:top-0 ui-control flex items-center bg-white md:bg-transparent p-1 rounded border md:border-none shadow-sm md:shadow-none z-10">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={data.paymentInfo?.show ?? false} 
+                                                    onChange={(e) => setData({...data, paymentInfo: {...data.paymentInfo, show: e.target.checked}})}
+                                                    className="w-4 h-4 cursor-pointer accent-sky-600"
+                                                    title="Hiển thị/Ẩn thông tin thanh toán"
+                                                />
+                                            </div>
+                                        )}
+                                        {((data.paymentInfo?.show) || !isPreviewMode) && (
+                                            <div className={(!data.paymentInfo?.show && !isPreviewMode) ? 'opacity-40' : ''}>
+                                                <h3 className="font-bold text-sky-700 mb-1 pr-6 md:pr-0">THÔNG TIN THANH TOÁN:</h3>
+                                                <div className="space-y-1">
+                                                    <p className="font-bold text-black">{renderEditable(data.paymentInfo?.title || "Tài khoản cá nhân:", (e) => setData({...data, paymentInfo: {...data.paymentInfo, title: e.target.value}}), "Tiêu đề", "font-bold text-black w-full bg-transparent")}</p>
+                                                    <p>{renderEditable(data.paymentInfo?.stk || "STK: ...", (e) => setData({...data, paymentInfo: {...data.paymentInfo, stk: e.target.value}}), "Số tài khoản", "w-full bg-transparent")}</p>
+                                                    <p>{renderEditable(data.paymentInfo?.ctk || "CTK: ...", (e) => setData({...data, paymentInfo: {...data.paymentInfo, ctk: e.target.value}}), "Chủ tài khoản", "w-full bg-transparent")}</p>
+                                                </div>
+                                                {!isPreviewMode && !data.paymentInfo?.show && <div className="text-red-500 font-medium mt-2 text-[10px] ui-control bg-red-50 p-1 rounded inline-block">Đang ẩn (Tích vào ô vuông để hiện khi in)</div>}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="w-1/2 pl-12">
-                                    <div className="flex justify-between py-1 border-b border-gray-100"><span className="font-bold text-gray-700">Tổng giá trị giải pháp:</span><span className="font-bold text-lg">{formatCurrency(totals.subtotal)} VNĐ</span></div>
-                                    <div className="flex justify-between py-1 items-center border-b border-gray-100">
-                                        <span className="text-gray-600 flex items-center gap-2">Chiết khấu: {!isPreviewMode && <button className="ui-control bg-gray-200 px-1 rounded hover:bg-gray-300" onClick={() => setData({...data, financials: {...data.financials, discountType: data.financials.discountType === 'amount' ? 'percent' : 'amount'}})}><Icons.RefreshCcw size={8}/> {data.financials.discountType === 'amount' ? 'Số tiền' : '%'}</button>}</span>
-                                        <div className="flex items-center gap-1">{renderEditable(data.financials.discountType === 'amount' ? formatCurrency(data.financials.discountValue) : data.financials.discountValue, (e) => setData({...data, financials: {...data.financials, discountValue: parseInt(e.target.value.replace(/[^0-9]/g,''))||0}}), "0", "text-right text-red-500 font-medium w-24")} <span className="text-xs font-bold w-6">{data.financials.discountType === 'amount' ? 'VNĐ' : '%'}</span></div>
+                                
+                                {/* Cột Tổng tiền */}
+                                <div className="w-full md:w-1/2 md:pl-8 lg:pl-12 order-1 md:order-2 bg-sky-50 md:bg-transparent p-4 md:p-0 rounded-lg">
+                                    <div className="flex justify-between py-1.5 md:py-1 border-b border-sky-100 md:border-gray-100"><span className="font-bold text-gray-700 text-sm md:text-base">Tổng giá trị:</span><span className="font-bold text-base md:text-lg">{formatCurrency(totals.subtotal)} đ</span></div>
+                                    <div className="flex justify-between py-1.5 md:py-1 items-center border-b border-sky-100 md:border-gray-100 text-xs md:text-sm">
+                                        <span className="text-gray-600 flex items-center gap-2">Chiết khấu: {!isPreviewMode && <button className="ui-control bg-sky-200 md:bg-gray-200 px-1.5 py-0.5 rounded hover:bg-sky-300 shadow-sm" onClick={() => setData({...data, financials: {...data.financials, discountType: data.financials.discountType === 'amount' ? 'percent' : 'amount'}})}><Icons.RefreshCcw size={10}/> {data.financials.discountType === 'amount' ? 'Số tiền' : '%'}</button>}</span>
+                                        <div className="flex items-center gap-1">{renderEditable(data.financials.discountType === 'amount' ? formatCurrency(data.financials.discountValue) : data.financials.discountValue, (e) => setData({...data, financials: {...data.financials, discountValue: parseInt(e.target.value.replace(/[^0-9]/g,''))||0}}), "0", "text-right text-red-500 font-bold w-20 md:w-24 bg-transparent")} <span className="text-[10px] md:text-xs font-bold w-6">{data.financials.discountType === 'amount' ? 'đ' : '%'}</span></div>
                                     </div>
-                                    {data.financials.discountType === 'percent' && <div className="flex justify-end text-[10px] text-red-400 italic">- {formatCurrency(totals.discount)} VNĐ</div>}
-                                    <div className="flex justify-between py-1 border-b border-gray-100"><span className="font-bold text-gray-700">Giá trị sau chiết khấu:</span><span className="font-bold text-orange-800">{formatCurrency(totals.subtotal - totals.discount)} VNĐ</span></div>
-                                    <div className="flex justify-between py-1 items-center border-b border-gray-100">
-                                        <span className="text-gray-600 flex items-center gap-2">Phí lắp đặt: {!isPreviewMode && <button className="ui-control bg-gray-200 px-1 rounded hover:bg-gray-300" onClick={() => setData({...data, financials: {...data.financials, installationType: data.financials.installationType === 'amount' ? 'percent' : 'amount'}})}><Icons.RefreshCcw size={8}/> {data.financials.installationType === 'amount' ? 'Số tiền' : '%'}</button>}</span>
-                                        <div className="flex items-center gap-1">{renderEditable(data.financials.installationType === 'amount' ? formatCurrency(data.financials.installationValue) : data.financials.installationValue, (e) => setData({...data, financials: {...data.financials, installationValue: parseInt(e.target.value.replace(/[^0-9]/g,''))||0}}), "0", "text-right w-24")} <span className="text-xs w-6">{data.financials.installationType === 'amount' ? 'VNĐ' : '%'}</span></div>
+                                    {data.financials.discountType === 'percent' && <div className="flex justify-end text-[10px] text-red-500 font-medium italic">- {formatCurrency(totals.discount)} đ</div>}
+                                    
+                                    <div className="flex justify-between py-1.5 md:py-1 border-b border-sky-100 md:border-gray-100 mt-1"><span className="font-bold text-gray-700 text-xs md:text-sm">Giá sau chiết khấu:</span><span className="font-bold text-sky-800 text-sm md:text-base">{formatCurrency(totals.subtotal - totals.discount)} đ</span></div>
+                                    <div className="flex justify-between py-1.5 md:py-1 items-center border-b border-sky-100 md:border-gray-100 text-xs md:text-sm">
+                                        <span className="text-gray-600 flex items-center gap-2">Phí lắp đặt: {!isPreviewMode && <button className="ui-control bg-sky-200 md:bg-gray-200 px-1.5 py-0.5 rounded hover:bg-sky-300 shadow-sm" onClick={() => setData({...data, financials: {...data.financials, installationType: data.financials.installationType === 'amount' ? 'percent' : 'amount'}})}><Icons.RefreshCcw size={10}/> {data.financials.installationType === 'amount' ? 'Số tiền' : '%'}</button>}</span>
+                                        <div className="flex items-center gap-1">{renderEditable(data.financials.installationType === 'amount' ? formatCurrency(data.financials.installationValue) : data.financials.installationValue, (e) => setData({...data, financials: {...data.financials, installationValue: parseInt(e.target.value.replace(/[^0-9]/g,''))||0}}), "0", "text-right w-20 md:w-24 font-medium bg-transparent")} <span className="text-[10px] md:text-xs w-6 text-gray-500">{data.financials.installationType === 'amount' ? 'đ' : '%'}</span></div>
                                     </div>
-                                    {data.financials.installationType === 'percent' && <div className="flex justify-end text-[10px] text-gray-500 italic">+ {formatCurrency(totals.install)} VNĐ</div>}
-                                    <div className="flex justify-between py-3 mt-2 bg-orange-600 text-white px-4 rounded-sm"><span className="font-bold uppercase text-sm">Tổng Thanh Toán:</span><span className="font-bold text-xl">{formatCurrency(totals.total)} VNĐ</span></div>
+                                    {data.financials.installationType === 'percent' && <div className="flex justify-end text-[10px] text-gray-500 font-medium italic">+ {formatCurrency(totals.install)} đ</div>}
+                                    
+                                    <div className="flex justify-between items-center py-3 md:py-4 mt-3 bg-sky-600 text-white px-4 md:px-5 rounded shadow-md"><span className="font-bold uppercase text-sm md:text-base tracking-wider">Tổng Thanh Toán</span><span className="font-black text-xl md:text-2xl">{formatCurrency(totals.total)} <span className="text-sm md:text-lg">VNĐ</span></span></div>
                                 </div>
                             </div>
-                            <div className="text-center text-[10px] text-gray-400 mt-6 italic border-t border-gray-100 pt-2">Báo giá có giá trị 2 tuần - Smarthome Phú Thái</div>
+                            <div className="text-center text-[9px] md:text-[10px] text-gray-400 mt-6 md:mt-8 italic border-t border-gray-100 pt-3">Báo giá có giá trị 2 tuần - Aqara Smarthome</div>
                         </div>
                     </div>
                 </div>
